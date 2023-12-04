@@ -143,6 +143,11 @@ describe("Silo Enroot", function () {
         await expect(this.result).to.emit(this.enroot, 'RemoveDeposit').withArgs(userAddress, UNRIPE_BEAN, stem10, to6('5'), '927823');
         await expect(this.result).to.emit(this.silo, 'AddDeposit').withArgs(userAddress, UNRIPE_BEAN, stem10, to6('5'), prune(to6('5')).add(to6('0.5')));
       });
+
+      it('does not emit ERC1155 events', async function () {
+        await expect(this.result).to.not.emit(this.silo, 'TransferSingle');
+        await expect(this.result).to.not.emit(this.silo, 'TransferBatch');
+      })
     });
 
     describe("1 deposit after 1 season, all", async function () {
@@ -189,6 +194,11 @@ describe("Silo Enroot", function () {
         await expect(this.result).to.emit(this.enroot, 'RemoveDeposit').withArgs(userAddress, UNRIPE_BEAN, stem10, to6('10'), '1855646');
         await expect(this.result).to.emit(this.silo, 'AddDeposit').withArgs(userAddress, UNRIPE_BEAN, stem10, to6('10'), to6('5'));
       });
+
+      it('does not emit ERC1155 events', async function () {
+        await expect(this.result).to.not.emit(this.silo, 'TransferSingle');
+        await expect(this.result).to.not.emit(this.silo, 'TransferBatch');
+      })
     });
 
     describe("2 deposit, all", async function () {
@@ -240,6 +250,11 @@ describe("Silo Enroot", function () {
         await expect(this.result).to.emit(this.silo, 'AddDeposit').withArgs(userAddress, UNRIPE_BEAN, stem10, to6('5'), to6('2.5'));
         await expect(this.result).to.emit(this.silo, 'AddDeposit').withArgs(userAddress, UNRIPE_BEAN, stem11, to6('5'), to6('2.5'));
       });
+
+      it('does not emit ERC1155 events', async function () {
+        await expect(this.result).to.not.emit(this.silo, 'TransferSingle');
+        await expect(this.result).to.not.emit(this.silo, 'TransferBatch');
+      })
     });
 
     describe("2 deposit, round", async function () {
@@ -280,6 +295,11 @@ describe("Silo Enroot", function () {
         expect(dep[0]).to.equal(to6('10'))
         expect(dep[1]).to.equal(bdv.sub('1').div('2').add('1'))
       });
+
+      it('does not emit ERC1155 events', async function () {
+        await expect(this.result).to.not.emit(this.silo, 'TransferSingle');
+        await expect(this.result).to.not.emit(this.silo, 'TransferBatch');
+      })
     });
   });
 });

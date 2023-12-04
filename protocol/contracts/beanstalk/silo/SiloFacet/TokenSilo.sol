@@ -201,7 +201,7 @@ contract TokenSilo is Silo {
             token,
             stem,
             amount,
-            LibTokenSilo.Transfer.emitTransferSingle
+            LibTokenSilo.Transfer.EMIT_SINGLE
         );
         
         _withdraw(
@@ -238,7 +238,8 @@ contract TokenSilo is Silo {
             account,
             token,
             stems,
-            amounts
+            amounts,
+            LibTokenSilo.Transfer.EMIT_BATCH
         );
 
         _withdraw(
@@ -276,6 +277,10 @@ contract TokenSilo is Silo {
      * @dev Removes `amount` of a single Deposit from `sender` and transfers
      * it to `recipient`. No Stalk are burned, and the total amount of
      * Deposited `token` in the Silo doesn't change. 
+     * 
+     * TransferSingle from the sender to the recipient should be used,
+     * rather than 2 TransferSingle events, where one burns the deposit,
+     * and the other reissues the deposit. 
      */
     function _transferDeposit(
         address sender,
@@ -289,7 +294,7 @@ contract TokenSilo is Silo {
             token,
             stem,
             amount,
-            LibTokenSilo.Transfer.noEmitTransferSingle
+            LibTokenSilo.Transfer.OMIT_EVENT
         );
         LibTokenSilo.addDepositToAccount(
             recipient, 
@@ -297,7 +302,7 @@ contract TokenSilo is Silo {
             stem, 
             amount, 
             bdv,
-            LibTokenSilo.Transfer.noEmitTransferSingle
+            LibTokenSilo.Transfer.OMIT_EVENT
         );
         LibSilo.transferStalk(sender, recipient, stalk);
 
@@ -345,6 +350,8 @@ contract TokenSilo is Silo {
         // added to the recipient's account during each iteration.
         for (uint256 i; i < stems.length; ++i) {
             uint256 depositID = uint256(LibBytes.packAddressAndStem(token, stems[i]));
+
+            // LibTokenSilo.{removeDepositFromAccount} does not emit an event.
             uint256 crateBdv = LibTokenSilo.removeDepositFromAccount(
                 sender,
                 token,
@@ -357,7 +364,7 @@ contract TokenSilo is Silo {
                 stems[i],
                 amounts[i],
                 crateBdv,
-                LibTokenSilo.Transfer.noEmitTransferSingle
+                LibTokenSilo.Transfer.OMIT_EVENT
             );
             ar.bdvRemoved = ar.bdvRemoved.add(crateBdv);
             ar.tokensRemoved = ar.tokensRemoved.add(amounts[i]);

@@ -189,6 +189,7 @@ describe('Silo', function () {
         depositID, 
         to6('1000')
       );
+      await expect(this.result).to.not.emit(this.silo, 'TransferBatch')
     });
 
     it('adds to the ERC1155 balance when depositing an whitelisted asset', async function () {
@@ -204,6 +205,7 @@ describe('Silo', function () {
         depositID, // depositID
         to6('1000') // amt
       );
+      await expect(this.result).to.not.emit(this.silo, 'TransferBatch')
       expect(await this.silo.balanceOf(userAddress, depositID)).to.eq(to6('2000'));
     });
 
@@ -222,6 +224,7 @@ describe('Silo', function () {
         depositID, // depositID
         to6('500') // amt
       );
+      await expect(this.result).to.not.emit(this.silo, 'TransferBatch')
       expect(await this.silo.balanceOf(userAddress, depositID)).to.eq(to6('500'));
     });
 
@@ -264,6 +267,7 @@ describe('Silo', function () {
         depositID, // depositID
         to6('1000') // amt
       );
+      await expect(this.result).to.not.emit(this.silo, 'TransferBatch')
     });
 
     it('batch transfers an ERC1155 deposit', async function () {
@@ -326,6 +330,9 @@ describe('Silo', function () {
         depositID1,   // depositID
         to6('1000')  // amt
       );
+
+      // calling batchTransferFrom does not emit a TransferBatch event, but a TransferSingle event for each deposit
+      await expect(this.result).to.not.emit(this.silo, 'TransferBatch')
     });
 
     it('properly gives the correct batch balances', async function () {

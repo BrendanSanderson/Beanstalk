@@ -345,7 +345,7 @@ library LibLegacyTokenSilo {
                     ), 
                     perDepositData.amount, 
                     crateBDV,
-                    LibTokenSilo.Transfer.emitTransferSingle
+                    LibTokenSilo.Transfer.EMIT_SINGLE
                 );
 
                 // Include Deposit in the total Deposited BDV.

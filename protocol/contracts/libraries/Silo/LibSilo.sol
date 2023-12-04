@@ -343,7 +343,7 @@ library LibSilo {
      *  - {_plant}
      *  - {SiloFacet-transferDeposit(s)}
      */
-   function _mow(address account, address token) internal {
+    function _mow(address account, address token) internal {
 
         require(!migrationNeeded(account), "Silo: Migration needed");
 
@@ -553,7 +553,7 @@ library LibSilo {
          *  Event is emitted in {TokenSilo._transferDeposit(s)}, 
          *  and thus, this event is ommited.
          */
-        if(transferType == LibTokenSilo.Transfer.emitTransferSingle){
+        if(transferType == LibTokenSilo.Transfer.EMIT_SINGLE){
             // "removing" a deposit is equivalent to "burning" an ERC1155 token.
             emit LibTokenSilo.TransferSingle(
                 msg.sender, // operator
@@ -578,7 +578,8 @@ library LibSilo {
         address account,
         address token,
         int96[] calldata stems,
-        uint256[] calldata amounts
+        uint256[] calldata amounts,
+        LibTokenSilo.Transfer transferType
     ) internal returns (AssetsRemoved memory ar) {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
@@ -612,8 +613,18 @@ library LibSilo {
             ar.bdvRemoved.mul(s.ss[token].stalkIssuedPerBdv)
         );
 
-        // "removing" deposits is equivalent to "burning" a batch of ERC1155 tokens.
-        emit TransferBatch(msg.sender, account, address(0), removedDepositIDs, amounts);
+        // withdraws should emit an ERC1155 burn.
+        // enroot should not.
+        if(transferType == LibTokenSilo.Transfer.EMIT_BATCH){
+            // "removing" a deposit is equivalent to "burning" an ERC1155 token.
+            emit TransferBatch(
+                msg.sender, // operator
+                account, // from
+                address(0), // to
+                removedDepositIDs, // depositid
+                amounts // token amount
+            );
+        }
         emit RemoveDeposits(account, token, stems, amounts, ar.tokensRemoved, bdvsRemoved);
     }
 

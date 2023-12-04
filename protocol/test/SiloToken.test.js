@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { deploy } = require("../scripts/deploy.js");
 const { readPrune, toBN, signSiloDepositTokenPermit, signSiloDepositTokensPermit } = require("../utils");
 const { EXTERNAL, INTERNAL, INTERNAL_EXTERNAL, INTERNAL_TOLERANT } = require("./utils/balances.js");
-const { BEAN, THREE_POOL, BEAN_3_CURVE, UNRIPE_LP, UNRIPE_BEAN, THREE_CURVE } = require("./utils/constants");
+const { BEAN, THREE_POOL, BEAN_3_CURVE, UNRIPE_LP, UNRIPE_BEAN, THREE_CURVE, ZERO_ADDRESS } = require("./utils/constants");
 const { to18, to6, toStalk, toBean } = require("./utils/helpers.js");
 const { takeSnapshot, revertToSnapshot } = require("./utils/snapshot");
 const { time, mineUpTo, mine } = require("@nomicfoundation/hardhat-network-helpers");
@@ -144,6 +144,22 @@ describe("Silo Token", function () {
         await expect(this.result).to.emit(this.silo, 'AddDeposit').withArgs(userAddress, this.siloToken.address, stem, '1000', '1000');
       });
 
+      it('properly emits ERC1155 event', async function () {
+        const stem = await this.silo.seasonToStem(this.siloToken.address, '10');
+
+        depositID = await this.silo.getDepositId(this.siloToken.address, stem)
+
+        await expect(this.result).to.emit(this.silo, 'TransferSingle').withArgs(
+          userAddress,  // operator
+          ZERO_ADDRESS,  // from
+          userAddress, // to
+          depositID,   // depositID
+          '1000'  // amt
+        );
+
+        await expect(this.result).to.not.emit(this.silo, 'TransferBatch')
+      })
+
       //it uses grownStalkForDeposit to verify the deposit amount is correct
       it('verifies the grown stalk for deposit is correct', async function () {
         expect(await this.silo.grownStalkForDeposit(userAddress, this.siloToken.address, 0)).to.eq(to6('0'));
@@ -272,6 +288,24 @@ describe("Silo Token", function () {
           const stem = await this.silo.seasonToStem(this.siloToken.address, '10');
           await expect(this.result).to.emit(this.silo, 'RemoveDeposit').withArgs(userAddress, this.siloToken.address, stem, '1000', '1000');
         });
+
+        it('properly emits ERC1155 event', async function () {
+          const stem = await this.silo.seasonToStem(this.siloToken.address, '10');
+  
+          depositID = await this.silo.getDepositId(this.siloToken.address, stem)
+  
+          await expect(this.result).to.emit(this.silo, 'TransferSingle').withArgs(
+            userAddress,  // operator
+            userAddress,  // from
+            ZERO_ADDRESS, // to
+            depositID,   // depositID
+            '1000'  // amt
+          );
+  
+          await expect(this.result).to.not.emit(this.silo, 'TransferBatch')
+        })
+
+        
       });
 
       describe("withdraw part of a bean crate", function () {
@@ -307,6 +341,23 @@ describe("Silo Token", function () {
           const stem = await this.silo.seasonToStem(this.siloToken.address, '10');
           await expect(this.result).to.emit(this.silo, 'RemoveDeposit').withArgs(userAddress, this.siloToken.address, stem, '500', '500');
         });
+
+        it('properly emits ERC1155 event', async function () {
+          const stem = await this.silo.seasonToStem(this.siloToken.address, '10');
+  
+          depositID = await this.silo.getDepositId(this.siloToken.address, stem)
+  
+          await expect(this.result).to.emit(this.silo, 'TransferSingle').withArgs(
+            userAddress,  // operator
+            userAddress,  // from
+            ZERO_ADDRESS, // to
+            depositID,   // depositID
+            '500' // amt
+          );
+  
+          await expect(this.result).to.not.emit(this.silo, 'TransferBatch')
+        })
+
       });
     });
 
@@ -344,6 +395,21 @@ describe("Silo Token", function () {
         it('emits RemoveDeposits event', async function () {
           await expect(this.result).to.emit(this.silo, 'RemoveDeposits').withArgs(userAddress, this.siloToken.address, [0,1], ['500', '1000'], '1500', ['500', '1000']);
         });
+
+        it('properly emits ERC1155 event', async function () {
+
+          depositIDs = [await this.silo.getDepositId(this.siloToken.address, 0), await this.silo.getDepositId(this.siloToken.address, 1)]
+  
+          await expect(this.result).to.emit(this.silo, 'TransferBatch').withArgs(
+            userAddress,  // operator
+            userAddress,  // from
+            ZERO_ADDRESS, // to
+            depositIDs,   // depositID
+            ['500', '1000']  // amt
+          );
+  
+          await expect(this.result).to.not.emit(this.silo, 'TransferSingle')
+        })
       });
       describe("2 token crates", function () {
         beforeEach(async function () {
@@ -377,6 +443,22 @@ describe("Silo Token", function () {
         it('emits RemoveDeposits event', async function () {
           await expect(this.result).to.emit(this.silo, 'RemoveDeposits').withArgs(userAddress, this.siloToken.address, [0,1], ['1000', '1000'], '2000', ['1000', '1000']);
         });
+
+        it('properly emits ERC1155 event', async function () {
+          const stem = await this.silo.seasonToStem(this.siloToken.address, '10');
+  
+          depositIDs = [await this.silo.getDepositId(this.siloToken.address, 0),await this.silo.getDepositId(this.siloToken.address, 1)]
+  
+          await expect(this.result).to.emit(this.silo, 'TransferBatch').withArgs(
+            userAddress,  // operator
+            userAddress,  // from
+            ZERO_ADDRESS, // to
+            depositIDs,   // depositID
+            ['1000', '1000']  // amt
+          );
+  
+          await expect(this.result).to.not.emit(this.silo, 'TransferSingle')
+        })
       });
     });
   });
@@ -879,6 +961,22 @@ describe("Silo Token", function () {
         expect(await this.silo.totalStalk()).to.be.equal('1000000')
         // //expect(await this.silo.totalSeeds()).to.be.equal('100')
       })
+
+      it('properly emits ERC1155 event', async function () {
+        const stem = await this.silo.seasonToStem(this.siloToken.address, '10');
+
+        depositID = await this.silo.getDepositId(this.siloToken.address, stem)
+
+        await expect(this.result).to.emit(this.silo, 'TransferSingle').withArgs(
+          userAddress,  // operator
+          userAddress,  // from
+          user2Address, // to
+          depositID,   // depositID
+          '50'  // amt
+        );
+
+        await expect(this.result).to.not.emit(this.silo, 'TransferBatch')
+      })
     })
 
     describe("Single all", async function () {
@@ -982,6 +1080,23 @@ describe("Silo Token", function () {
       it('updates total stalk and seeds', async function () {
         expect(await this.silo.totalStalk()).to.be.equal('2000100')
         //expect(await this.silo.totalSeeds()).to.be.equal('200')
+      })
+
+      it('properly emits ERC1155 event', async function () {
+        stem10 = await this.silo.seasonToStem(this.siloToken.address, '10');
+        stem11 = await this.silo.seasonToStem(this.siloToken.address, '11');
+
+        depositIDs = [await this.silo.getDepositId(this.siloToken.address, stem10), await this.silo.getDepositId(this.siloToken.address, stem11)]
+
+        await expect(this.result).to.emit(this.silo, 'TransferBatch').withArgs(
+          userAddress,  // operator
+          userAddress,  // from
+          user2Address, // to
+          depositIDs,   // depositID
+          ['50', '25']  // amt
+        );
+
+        await expect(this.result).to.not.emit(this.silo, 'TransferSingle')
       })
     })
 
@@ -1210,6 +1325,11 @@ describe("Silo Token", function () {
         await expect(this.result).to.emit(this.enroot, 'RemoveDeposit').withArgs(userAddress, UNRIPE_BEAN, stem10, to6('5'), '927823');
         await expect(this.result).to.emit(this.silo, 'AddDeposit').withArgs(userAddress, UNRIPE_BEAN, stem10, to6('5'), prune(to6('5')).add(to6('0.5')));
       });
+
+      it('properly omits ERC1155 event', async function () {
+        await expect(this.result).to.not.emit(this.silo, 'TransferBatch')
+        await expect(this.result).to.not.emit(this.silo, 'TransferSingle')
+      })
     });
 
     describe("1 deposit after 1 season, all", async function () {
@@ -1255,6 +1375,11 @@ describe("Silo Token", function () {
         await expect(this.result).to.emit(this.enroot, 'RemoveDeposit').withArgs(userAddress, UNRIPE_BEAN, stem10, to6('10'), '1855646');
         await expect(this.result).to.emit(this.silo, 'AddDeposit').withArgs(userAddress, UNRIPE_BEAN, stem10, to6('10'), to6('5'));
       });
+
+      it('properly omits ERC1155 event', async function () {
+        await expect(this.result).to.not.emit(this.silo, 'TransferBatch')
+        await expect(this.result).to.not.emit(this.silo, 'TransferSingle')
+      })
     });
 
     describe("2 deposit, all", async function () {
@@ -1306,6 +1431,11 @@ describe("Silo Token", function () {
         await expect(this.result).to.emit(this.silo, 'AddDeposit').withArgs(userAddress, UNRIPE_BEAN, stem10, to6('5'), to6('2.5'));
         await expect(this.result).to.emit(this.silo, 'AddDeposit').withArgs(userAddress, UNRIPE_BEAN, stem11, to6('5'), to6('2.5'));
       });
+
+      it('properly omits ERC1155 event', async function () {
+        await expect(this.result).to.not.emit(this.silo, 'TransferBatch')
+        await expect(this.result).to.not.emit(this.silo, 'TransferSingle')
+      })
     });
   });
 

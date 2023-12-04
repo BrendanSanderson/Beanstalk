@@ -226,7 +226,7 @@ contract ConvertFacet is ReentrancyGuard {
             stem, 
             amount, 
             bdv,
-            LibTokenSilo.Transfer.emitTransferSingle
+            LibTokenSilo.Transfer.EMIT_SINGLE
         );
     }
 }
