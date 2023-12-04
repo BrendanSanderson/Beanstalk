@@ -57,7 +57,7 @@ contract Replant7 {
                 REPLANT_SEASON,
                 earned[i].earnedBeans,
                 earnedBeans.mul(C.initialRecap()).div(1e18),
-                LibTokenSilo.Transfer.noEmitTransferSingle 
+                LibTokenSilo.Transfer.OMIT_EVENT 
             );
 
             prune(earned[i]);

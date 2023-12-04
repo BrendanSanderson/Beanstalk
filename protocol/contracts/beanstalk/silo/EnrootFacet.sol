@@ -78,7 +78,7 @@ contract EnrootFacet is ReentrancyGuard {
             stem, 
             amount, 
             newBDV,
-            LibTokenSilo.Transfer.noEmitTransferSingle
+            LibTokenSilo.Transfer.OMIT_EVENT
         ); // emits AddDeposit event
 
         // Calculate the difference in BDV. Reverts if `ogBDV > newBDV`.
@@ -121,7 +121,16 @@ contract EnrootFacet is ReentrancyGuard {
         require(s.u[token].underlyingToken != address(0), "Silo: token not unripe");
         // First, remove Deposits because every deposit is in a different season,
         // we need to get the total Stalk, not just BDV.
-        LibSilo.AssetsRemoved memory ar = LibSilo._removeDepositsFromAccount(msg.sender, token, stems, amounts);
+        
+        // enroots should not emit an event, as the stems and amounts are the same
+        // before and after an enroot. 
+        LibSilo.AssetsRemoved memory ar = LibSilo._removeDepositsFromAccount(
+            msg.sender, 
+            token, 
+            stems, 
+            amounts,
+            LibTokenSilo.Transfer.OMIT_EVENT
+        );
 
         // Get new BDV
         uint256 newTotalBdv = LibTokenSilo.beanDenominatedValue(token, ar.tokensRemoved);
@@ -151,7 +160,7 @@ contract EnrootFacet is ReentrancyGuard {
                 stems[i],
                 amounts[i],
                 depositBdv,
-                LibTokenSilo.Transfer.noEmitTransferSingle
+                LibTokenSilo.Transfer.OMIT_EVENT
             );
             
             stalkAdded = stalkAdded.add(
